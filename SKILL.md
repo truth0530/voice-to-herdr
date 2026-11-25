@@ -49,7 +49,7 @@ Claude 앱(음성) ──인터넷──> https://<Funnel 주소>/mcp/<토큰>
 | `<설정 파일>` | 서버 설정 | `~/.config/voice-to-herdr/config.json` | `$env:APPDATA\voice-to-herdr\config.json` |
 | `<서비스 이름>` | 상시 실행 항목 | LaunchAgent Label, 예 `com.user.voice-to-herdr` | 작업 스케줄러 이름, 예 `voice-to-herdr` |
 | `<로그 경로>` | 서버 로그 | 예 `/Users/<이름>/Library/Logs/voice-to-herdr.log` | `$env:LOCALAPPDATA\voice-to-herdr\server.log` (고정) |
-| `<Funnel 주소>` | 바깥 https 주소 | `tailscale funnel status`에서 `proxy http://127.0.0.1:<포트>`가 붙은 블록의 https 주소(8443이면 `:8443`까지) | 같음 |
+| `<Funnel 주소>` | 바깥 https 주소 | `tailscale funnel status`에서 `proxy http://127.0.0.1:<포트>`가 붙은 블록의 https 주소(커넥터에는 포트가 없는 443 주소만 쓴다) | 같음 |
 
 커넥터에 넣는 최종 주소 = `<Funnel 주소>/mcp/<토큰>`. 토큰은 설정 파일 안에만 있다.
 
@@ -191,14 +191,17 @@ node setup-config.mjs --port <포트> --herdr "<herdr 경로>"
 
 ## 6단계. Tailscale Funnel 켜기 [맥: Claude 실행 · 윈도우: 사용자 직접]
 
-1. 기존 설정 확인: `tailscale funnel status`, `tailscale serve status`. 443에 다른 서비스가 있으면 덮어쓰지 말고
-   8443(또는 10000)을 쓴다. Funnel 공개 포트는 443·8443·10000뿐이다.
+1. 기존 설정 확인: `tailscale funnel status`, `tailscale serve status`. **Claude 커스텀 커넥터는 표준 HTTPS 포트 443으로만
+   연결된다. 포트가 붙은 URL(`:8443` 등)은 연결하지 못한다**(Anthropic 문서). 그래서 커넥터용 Funnel은 반드시 443이다.
+   **443을 이미 다른 서비스가 쓰고 있으면 하나만 고를 수 있다**: 그 서비스를 다른 방법으로 옮기거나(다른 컴퓨터·다른
+   Tailscale 기기의 443으로 열기), 그 서비스를 끄고 이 서버로 교체하거나, 이 서버를 켜지 않는다. 한 기기의 443에 두 서비스를 경로로 나눠
+   싣는 방법(`--set-path`)은 이 문서에서 검증하지 않았으니 권하지 않는다. 덮어쓰기 전에 `tailscale funnel status`로 기존
+   내용을 사용자에게 보여 주고 동의를 받는다.
+   8443·10000은 휴대폰 `/healthz` 점검에는 쓸 수 있어도 커넥터에는 못 쓴다.
 2. 켜기:
-   - 맥 [Claude 실행, 백그라운드로]: `tailscale funnel --bg <포트>` (443이 차 있으면 `tailscale funnel --bg --https=8443 <포트>`)
+   - 맥 [Claude 실행, 백그라운드로]: `tailscale funnel --bg <포트>`
    - 윈도우 [사용자 직접]: 시작 메뉴 → PowerShell 우클릭 → "관리자 권한으로 실행" → 붙여 넣기:
      `& "C:\Program Files\Tailscale\tailscale.exe" funnel --bg <포트>` → 출력을 Claude에게 붙여 준다.
-     1번에서 443에 다른 서비스가 있었다면 덮어쓰지 않도록 이 줄을 대신 쓴다(주소와 커넥터에 `:8443`이 붙는다):
-     `& "C:\Program Files\Tailscale\tailscale.exe" funnel --bg --https=8443 <포트>`
    - 기존 설정을 바꾼다는 y/N 질문이 나오면 사용자 동의를 받은 뒤에만 `--yes`를 붙인다.
 3. [사용자 직접] 처음 켜는 tailnet이면 명령이 `https://login.tailscale.com/...` 링크를 내고 기다린다. 그 링크를 열어
    Funnel(과 HTTPS 인증서) 허용 버튼을 누른다. 버튼이 없거나 관리자 문의가 나오면 troubleshooting "Funnel 권한 없음".
