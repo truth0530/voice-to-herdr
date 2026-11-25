@@ -43,7 +43,20 @@
 
 ### `herdr not found at "..."`
 - 서비스는 로그인 셸의 PATH를 모른다. `node setup-config.mjs --herdr "<herdr 경로>"`로 전체 경로를 넣고 서비스를 재시작한다.
-- 윈도우는 `where.exe herdr`의 `C:\...\herdr.exe` 형식이어야 한다. Git Bash의 `/c/...`나 `.cmd`·`.ps1` 경로는 안 된다.
+- 윈도우는 `C:\...\herdr.exe` 형식이어야 한다. Git Bash의 `/c/...`나 `.cmd`·`.ps1` 경로는 안 된다.
+- `where.exe herdr`가 주는 `...\releases\<버전>\herdr.exe`는 `herdr update` 뒤 옛 릴리스가 정리되면 사라진다. 어제는 됐는데
+  업데이트 뒤부터 이 오류면 이 경우다. `$env:LOCALAPPDATA\Programs\Herdr\bin\herdr.exe`(안정 경로)가 있으면
+  `node setup-config.mjs --herdr "<그 경로>"` 후 `windows-service.ps1 -Action restart`.
+
+### 윈도우: herdr 서버가 관리자 권한 (`For an elevated server, use an administrator terminal`)
+- 증상: `standup`이 `no answer (... For an elevated server, use an administrator terminal ...)`. 서버는 일반 권한(작업 스케줄러, 5단계)으로
+  돌고, herdr 서버는 관리자 터미널에서 떠서 herdr가 일반 권한 클라이언트를 막는다.
+- 확인: 관리자가 아닌 PowerShell에서 `herdr agent list`가 같은 오류를 내는지 본다.
+- 해결 A: herdr 설정 `%APPDATA%\herdr\config.toml`에 `[server]` 아래 `allow_unelevated_clients = true`를 넣고
+  herdr 서버를 **재시작**한다. 재시작하면 열려 있던 pane과 에이전트가 모두 닫힌다. 이 설정은 이 계정의 일반 권한 프로세스가
+  관리자 pane을 제어하게 허용하는 것이므로 의미를 이해하고 [사용자 직접] 정한다.
+- 해결 B: herdr를 관리자가 아닌 일반 터미널에서 다시 띄운다(재시작하면 pane이 닫힘). 관리자 권한이 꼭 필요한 pane이 없다면 가장 단순하다.
+- 서버 작업을 관리자 권한으로 올리는 것은 인터넷에 열린 프로세스의 권한을 올리는 것이라 권하지 않는다.
 
 ### 원격 머신(`remotes`)만 "no answer"
 - 터미널에서 `herdr --machine <이름> agent list`가 되는지 본다.

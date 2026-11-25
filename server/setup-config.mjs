@@ -4,6 +4,7 @@
 // Prints the config path and the non-secret settings.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, chmodSync } from "node:fs";
 import { randomBytes } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -41,8 +42,19 @@ if (!/^[A-Za-z0-9_-]{32,}$/.test(String(cfg.token || "")) || args.includes("--ne
 mkdirSync(dirname(CONFIG_PATH), { recursive: true });
 writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2) + "\n", { mode: 0o600 });
 if (!IS_WIN) chmodSync(CONFIG_PATH, 0o600);
+let winRestricted = false;
+if (IS_WIN) {
+  // The mode above does nothing on Windows: the file keeps the folder's inherited ACL, which can include other
+  // accounts and sandbox users. Remove the inheritance and leave read/write for the current account only.
+  const user = process.env.USERNAME;
+  const who = user && process.env.USERDOMAIN ? `${process.env.USERDOMAIN}\\${user}` : user;
+  const r = who ? spawnSync("icacls", [CONFIG_PATH, "/inheritance:r", "/grant:r", `${who}:(R,W)`], { stdio: "ignore", windowsHide: true }) : { status: 1 };
+  winRestricted = r.status === 0;
+  if (!winRestricted) console.error(`WARNING: could not restrict permissions on ${CONFIG_PATH}. It holds the token: run  icacls "${CONFIG_PATH}" /inheritance:r /grant:r "%USERNAME%:(R,W)"`);
+}
 console.log(`config: ${CONFIG_PATH}`);
 console.log(`port=${cfg.port} herdrPath=${cfg.herdrPath} allowPrompt=${cfg.allowPrompt} remotes=${(cfg.remotes || []).length} token=(set, hidden)`);
+if (winRestricted) console.log("permissions: config file restricted to your Windows account");
 if (cfg.allowPrompt && opt("--allow-prompt") === undefined) {
   console.log("NOTE: allowPrompt=true was kept from the existing config. Ask the user; to turn it off: --allow-prompt false");
 }

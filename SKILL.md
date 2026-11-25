@@ -44,7 +44,7 @@ Claude 앱(음성) ──인터넷──> https://<Funnel 주소>/mcp/<토큰>
 | `<저장소>` | 이 저장소 폴더 | 예 `/Users/<이름>/voice-to-herdr` | 예 `C:\Users\<이름>\voice-to-herdr` |
 | `<서버 폴더>` | `<저장소>/server` | | |
 | `<포트>` | 서버의 로컬 포트 | 기본 8765. 비었는지 `lsof -nP -iTCP:8765 -sTCP:LISTEN` (출력 없으면 빔) | `Get-NetTCPConnection -LocalPort 8765 -State Listen` (오류면 빔) |
-| `<herdr 경로>` | herdr 실행 파일 | `command -v herdr` | `where.exe herdr` 중 **`C:\...\herdr.exe`** 줄 (`/c/...`·`.cmd`·`.ps1`은 안 됨) |
+| `<herdr 경로>` | herdr 실행 파일 | `command -v herdr` | `$env:LOCALAPPDATA\Programs\Herdr\bin\herdr.exe`가 있으면 **그것**(`herdr update`를 해도 경로가 안 바뀐다). 없으면 `where.exe herdr` 중 **`C:\...\herdr.exe`** 줄(`/c/...`·`.cmd`·`.ps1`은 안 됨). `where.exe`가 주는 `...\releases\<버전>\herdr.exe`는 업데이트 뒤 지워질 수 있다 |
 | `<node 경로>` | Node.js | `command -v node` | `where.exe node` 첫 줄 |
 | `<설정 파일>` | 서버 설정 | `~/.config/voice-to-herdr/config.json` | `$env:APPDATA\voice-to-herdr\config.json` |
 | `<서비스 이름>` | 상시 실행 항목 | LaunchAgent Label, 예 `com.user.voice-to-herdr` | 작업 스케줄러 이름, 예 `voice-to-herdr` |
@@ -66,7 +66,7 @@ tailscale version; tailscale status --self=true --peers=false
 윈도우:
 ```powershell
 [Environment]::OSVersion.VersionString
-where.exe herdr; herdr --version; herdr status
+where.exe herdr; Test-Path "$env:LOCALAPPDATA\Programs\Herdr\bin\herdr.exe"; herdr --version; herdr status
 where.exe node; node --version
 & "C:\Program Files\Tailscale\tailscale.exe" version
 & "C:\Program Files\Tailscale\tailscale.exe" status --self=true --peers=false
@@ -129,7 +129,11 @@ node setup-config.mjs --port <포트> --herdr "<herdr 경로>"
   넣는다. `pc:w1:p2`처럼 부른다. prefix는 소문자이고 `w`+숫자로 시작하면 안 된다.
 - 설정 파일을 손으로 고칠 때 주의(특히 윈도우 인코딩·역슬래시): troubleshooting "설정 파일을 못 읽음".
 
-**통과**: 출력에 `config: <설정 파일>`과 `token=(set, hidden)`이 나온다.
+- 윈도우: 이 스크립트가 설정 파일 권한을 현재 계정만 읽고 쓰게 좁힌다(토큰이 든 파일이다. 윈도우는 맥의 `0o600`이
+  효과가 없어 폴더의 상속 권한 그대로면 다른 계정에도 열려 있다). `WARNING: could not restrict permissions`가 나오면
+  그 줄의 `icacls` 명령을 실행한다.
+
+**통과**: 출력에 `config: <설정 파일>`과 `token=(set, hidden)`이 나온다. 윈도우는 `permissions: config file restricted to your Windows account`도 나온다.
 
 ## 4단계. 직접 띄워 시험 [Claude 실행]
 
@@ -139,7 +143,9 @@ node setup-config.mjs --port <포트> --herdr "<herdr 경로>"
 3. `node check.mjs`
 
 **통과**: `1/3 initialize ok`, `2/3 tools: standup, read_agent, prompt_agent`, `3/3 standup: N agents (local N)`, `OK`.
-`FAIL`이나 `WARN: 0 agents`면 그 줄의 안내를 따른다.
+`FAIL`이나 `WARN: 0 agents`면 그 줄의 안내를 따른다. 윈도우에서 standup 줄에
+`For an elevated server, use an administrator terminal`이 나오면 herdr 서버가 관리자 권한으로 떠 있는 것이다
+(troubleshooting "윈도우: herdr 서버가 관리자 권한").
 
 시험이 끝나면 백그라운드 서버를 끈다(Claude Code의 백그라운드 작업 중지). 다음 단계 서비스가 같은 포트를 쓴다.
 
@@ -191,6 +197,8 @@ node setup-config.mjs --port <포트> --herdr "<herdr 경로>"
    - 맥 [Claude 실행, 백그라운드로]: `tailscale funnel --bg <포트>` (443이 차 있으면 `tailscale funnel --bg --https=8443 <포트>`)
    - 윈도우 [사용자 직접]: 시작 메뉴 → PowerShell 우클릭 → "관리자 권한으로 실행" → 붙여 넣기:
      `& "C:\Program Files\Tailscale\tailscale.exe" funnel --bg <포트>` → 출력을 Claude에게 붙여 준다.
+     1번에서 443에 다른 서비스가 있었다면 덮어쓰지 않도록 이 줄을 대신 쓴다(주소와 커넥터에 `:8443`이 붙는다):
+     `& "C:\Program Files\Tailscale\tailscale.exe" funnel --bg --https=8443 <포트>`
    - 기존 설정을 바꾼다는 y/N 질문이 나오면 사용자 동의를 받은 뒤에만 `--yes`를 붙인다.
 3. [사용자 직접] 처음 켜는 tailnet이면 명령이 `https://login.tailscale.com/...` 링크를 내고 기다린다. 그 링크를 열어
    Funnel(과 HTTPS 인증서) 허용 버튼을 누른다. 버튼이 없거나 관리자 문의가 나오면 troubleshooting "Funnel 권한 없음".
