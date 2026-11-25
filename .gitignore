@@ -1,0 +1,6 @@
+node_modules/
+config.json
+*.log
+server/run-server.cmd
+server/run-hidden.vbs
+.DS_Store

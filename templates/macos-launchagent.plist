@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  macOS LaunchAgent 템플릿. Claude가 아래 자리 표시를 실제 값으로 바꿔
+  ~/Library/LaunchAgents/<서비스 이름>.plist 로 저장한다.
+  - <서비스 이름>   예: com.user.voice-to-herdr  (파일 이름과 Label이 같아야 함)
+  - <node 경로>     `command -v node` 결과(nvm이면 버전 폴더까지 들어간 전체 경로)
+  - <서버 폴더>     이 저장소의 server 폴더 전체 경로
+  - <로그 경로>     예: /Users/<사용자>/Library/Logs/voice-to-herdr.log
+  - <PATH 값>       herdr·node가 들어 있는 폴더들. 예: /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
+  launchd는 로그인 셸의 PATH를 읽지 않으므로 node와 herdr는 전체 경로로 적는다.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string><서비스 이름></string>
+	<key>ProgramArguments</key>
+	<array>
+		<string><node 경로></string>
+		<string><서버 폴더>/server.mjs</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string><서버 폴더></string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string><PATH 값></string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>5</integer>
+	<key>StandardOutPath</key>
+	<string><로그 경로></string>
+	<key>StandardErrorPath</key>
+	<string><로그 경로></string>
+</dict>
+</plist>

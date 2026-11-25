@@ -1,0 +1,7 @@
+{
+  "token": "<토큰: 64자리 무작위 문자열>",
+  "port": 8765,
+  "allowPrompt": false,
+  "herdrPath": "<herdr 실행 파일 전체 경로>",
+  "remotes": []
+}

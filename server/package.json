@@ -1,0 +1,21 @@
+{
+  "name": "voice-to-herdr",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal remote MCP server so the Claude app (voice) can check and instruct herdr agents.",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node check.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/node": "2.1.2",
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7"
+  }
+}
