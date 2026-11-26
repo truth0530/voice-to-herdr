@@ -26,6 +26,7 @@ git clone https://github.com/truth0530/voice-to-herdr ~/.claude/skills/voice-to-
 Tailscale Funnel 설정까지 하고, 로그인·권한 허용·커넥터 등록처럼 사용자가 직접 눌러야 하는 단계는 자세히 안내합니다.
 
 막히면 [references/troubleshooting.md](references/troubleshooting.md)를 보세요(컴퓨터 이전 후 주소 변경, Funnel 권한, 포트 충돌, 윈도우 등).
+음성 모드에서 지시 보내기마다 허용 창이 뜨면 [docs/voice-mode-allow-prompt.md](docs/voice-mode-allow-prompt.md)를 보세요.
 
 ## 준비물
 - herdr가 설치된 맥 또는 윈도우 PC
